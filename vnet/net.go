@@ -464,9 +464,12 @@ type NetConfig struct {
 // Net represents a local network stack euivalent to a set of layers from NIC
 // up to the transport (UDP / TCP) layer.
 type Net struct {
-	v   *vNet
-	ifs []*Interface
+	v             *vNet
+	ifs           []*Interface
+	ListenUDPFunc ListenUDPFunc
 }
+
+type ListenUDPFunc func(network string, locAddr *net.UDPAddr) (UDPPacketConn, error)
 
 // NewNet creates an instance of Net.
 // If config is nil, the virtual network is disabled. (uses corresponding
@@ -571,6 +574,11 @@ func (n *Net) ListenPacket(network string, address string) (net.PacketConn, erro
 
 // ListenUDP acts like ListenPacket for UDP networks.
 func (n *Net) ListenUDP(network string, locAddr *net.UDPAddr) (UDPPacketConn, error) {
+
+	if n.ListenUDPFunc != nil {
+		return n.ListenUDPFunc(network, locAddr)
+	}
+
 	if n.v == nil {
 		return net.ListenUDP(network, locAddr)
 	}
