@@ -464,11 +464,13 @@ type NetConfig struct {
 // Net represents a local network stack euivalent to a set of layers from NIC
 // up to the transport (UDP / TCP) layer.
 type Net struct {
-	v             *vNet
-	ifs           []*Interface
-	ListenUDPFunc ListenUDPFunc
+	v                  *vNet
+	ifs                []*Interface
+	ListenUDPFunc      ListenUDPFunc
+	ResolveUDPAddrFunc ResolveUDPAddrFunc
 }
 
+type ResolveUDPAddrFunc func(network, address string) (*net.UDPAddr, error)
 type ListenUDPFunc func(network string, locAddr *net.UDPAddr) (UDPPacketConn, error)
 
 // NewNet creates an instance of Net.
@@ -620,6 +622,9 @@ func (n *Net) DialUDP(network string, laddr, raddr *net.UDPAddr) (UDPPacketConn,
 
 // ResolveUDPAddr returns an address of UDP end point.
 func (n *Net) ResolveUDPAddr(network, address string) (*net.UDPAddr, error) {
+	if n.ResolveUDPAddrFunc != nil {
+		return n.ResolveUDPAddrFunc(network, address)
+	}
 	if n.v == nil {
 		return net.ResolveUDPAddr(network, address)
 	}
